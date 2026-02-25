@@ -1,10 +1,7 @@
-import { clearApiProviders, registerApiProvider } from "../api-registry.js";
-import { streamBedrock, streamSimpleBedrock } from "./amazon-bedrock.js";
+import { clearApiProviders, registerApiProvider, registerLazyApiProvider } from "../api-registry.js";
 import { streamAnthropic, streamSimpleAnthropic } from "./anthropic.js";
 import { streamAzureOpenAIResponses, streamSimpleAzureOpenAIResponses } from "./azure-openai-responses.js";
-import { streamGoogle, streamSimpleGoogle } from "./google.js";
-import { streamGoogleGeminiCli, streamSimpleGoogleGeminiCli } from "./google-gemini-cli.js";
-import { streamGoogleVertex, streamSimpleGoogleVertex } from "./google-vertex.js";
+
 import { streamOpenAICodexResponses, streamSimpleOpenAICodexResponses } from "./openai-codex-responses.js";
 import { streamOpenAICompletions, streamSimpleOpenAICompletions } from "./openai-completions.js";
 import { streamOpenAIResponses, streamSimpleOpenAIResponses } from "./openai-responses.js";
@@ -40,29 +37,16 @@ export function registerBuiltInApiProviders(): void {
 		streamSimple: streamSimpleOpenAICodexResponses,
 	});
 
-	registerApiProvider({
-		api: "google-generative-ai",
-		stream: streamGoogle,
-		streamSimple: streamSimpleGoogle,
-	});
+	// Lazy-loaded providers: these pull in heavy SDKs (@google/genai, @aws-sdk)
+	// and are only imported when actually used.
 
-	registerApiProvider({
-		api: "google-gemini-cli",
-		stream: streamGoogleGeminiCli,
-		streamSimple: streamSimpleGoogleGeminiCli,
-	});
+	registerLazyApiProvider("google-generative-ai", () => import("./google.js"));
 
-	registerApiProvider({
-		api: "google-vertex",
-		stream: streamGoogleVertex,
-		streamSimple: streamSimpleGoogleVertex,
-	});
+	registerLazyApiProvider("google-gemini-cli", () => import("./google-gemini-cli.js"));
 
-	registerApiProvider({
-		api: "bedrock-converse-stream",
-		stream: streamBedrock,
-		streamSimple: streamSimpleBedrock,
-	});
+	registerLazyApiProvider("google-vertex", () => import("./google-vertex.js"));
+
+	registerLazyApiProvider("bedrock-converse-stream", () => import("./amazon-bedrock.js"));
 }
 
 export function resetApiProviders(): void {

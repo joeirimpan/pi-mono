@@ -9,7 +9,18 @@ import { createRequire } from "node:module";
 import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createJiti } from "@mariozechner/jiti";
+
+// Lazy-load jiti (and its transitive babel dependency) only when extensions need transpilation.
+// This saves ~80ms of startup time when no extensions are loaded.
+let _createJiti: typeof import("@mariozechner/jiti").createJiti | undefined;
+
+function getCreateJiti(): typeof import("@mariozechner/jiti").createJiti {
+	if (!_createJiti) {
+		_createJiti = (require("@mariozechner/jiti") as typeof import("@mariozechner/jiti")).createJiti;
+	}
+	return _createJiti;
+}
+
 import * as _bundledPiAgentCore from "@mariozechner/pi-agent-core";
 import * as _bundledPiAi from "@mariozechner/pi-ai";
 import type { KeyId } from "@mariozechner/pi-tui";
@@ -256,7 +267,7 @@ function createExtensionAPI(
 }
 
 async function loadExtensionModule(extensionPath: string) {
-	const jiti = createJiti(import.meta.url, {
+	const jiti = getCreateJiti()(import.meta.url, {
 		moduleCache: false,
 		// In Bun binary: use virtualModules for bundled packages (no filesystem resolution)
 		// Also disable tryNative so jiti handles ALL imports (not just the entry point)

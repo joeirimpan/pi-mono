@@ -4,7 +4,27 @@ import type { EditorTheme, MarkdownTheme, SelectListTheme } from "@mariozechner/
 import { type Static, Type } from "@sinclair/typebox";
 import { TypeCompiler } from "@sinclair/typebox/compiler";
 import chalk from "chalk";
-import { highlight, supportsLanguage } from "cli-highlight";
+import type { HighlightOptions } from "cli-highlight";
+
+// Lazy-load cli-highlight (and its transitive highlight.js dependency) on first use.
+// This saves ~160ms of startup time.
+let _cliHighlight: typeof import("cli-highlight") | undefined;
+
+function loadCliHighlight(): typeof import("cli-highlight") {
+	if (!_cliHighlight) {
+		_cliHighlight = require("cli-highlight") as typeof import("cli-highlight");
+	}
+	return _cliHighlight;
+}
+
+function highlight(code: string, options?: HighlightOptions): string {
+	return loadCliHighlight().highlight(code, options);
+}
+
+function supportsLanguage(lang: string): boolean {
+	return loadCliHighlight().supportsLanguage(lang);
+}
+
 import { getCustomThemesDir, getThemesDir } from "../../../config.js";
 
 // ============================================================================
